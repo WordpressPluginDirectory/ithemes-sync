@@ -1,0 +1,59 @@
+pipelines:
+  branches:
+    tests:
+      - step:
+          name: Build
+          image: php:7.3
+          caches:
+            - composer
+          script:
+            - apt-get update && apt-get install -y unzip git-all gettext-base
+            - git submodule update --init --recursive
+            - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+            - composer install --ignore-platform-reqs
+            - cp /tests/docker-compose.codeception.env /tests/codeception.env
+          artifacts:
+            - '**'
+      - parallel:
+          - step:
+              name: WP Unit Tests ( Latest )
+              services:
+                - docker
+              caches:
+                - docker
+              script:
+                - ./bin/setup-pipeline.sh
+                - npm run-script test-wpunit -- --xml test-reports/wpunit.xml
+#        - step:
+#            name: Acceptance Tests ( Latest )
+#            services:
+#              - docker
+#            caches:
+#              - docker
+#            script:
+#              - ./bin/setup-pipeline.sh
+#              - npm run-script test-build
+#              - npm run-script test-acceptance -- --xml test-reports/acceptance.xml
+#              - npm run-script test-cli -- --xml test-reports/cli.xml
+#        - step:
+#            name: WP Unit Tests ( 5.2 )
+#            services:
+#              - docker
+#            caches:
+#              - docker
+#            script:
+#              - sed -i -e 's/WP_TAG=latest/WP_TAG=5.2/g' .env
+#              - ./bin/setup-pipeline.sh
+#              - npm run-script test-wpunit -- --xml test-reports/wpunit.xml
+#        - step:
+#            name: Acceptance Tests ( 5.2 )
+#            services:
+#              - docker
+#            caches:
+#              - docker
+#            script:
+#              - sed -i -e 's/WP_TAG=latest/WP_TAG=5.2/g' .env
+#              - ./bin/setup-pipeline.sh
+#              - npm run-script test-build
+#              - npm run-script test-acceptance -- --xml test-reports/acceptance.xml
+#              - npm run-script test-cli -- --xml test-reports/cli.xml
